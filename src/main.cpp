@@ -13,10 +13,10 @@ Lance Putnam, Nov. 2014
 Keehong Youn, 2017
 */
 
+#include "Gamma/Oscillator.h"
 #include "al/app/al_App.hpp"
 #include "al/math/al_Random.hpp"
 #include <iostream>
-#include "Gamma/Oscillator.h"
 
 using namespace al;
 
@@ -32,22 +32,24 @@ struct MyApp : public App {
   std::vector<Mesh> shapes;
 
   gam::LFO<> lfo_1{};
+  gam::LFO<> lfo_2{};
 
   float FPS = 60;
 
   static const int PRIMITIVE_SIZE = 10;
-  int PRIMITIVE[PRIMITIVE_SIZE] = {5,4,13,4,5,1,2,3,1,2};
+  int PRIMITIVE[PRIMITIVE_SIZE] = {5, 4, 13, 4, 5, 1, 2, 3, 1, 2};
 
   int BLUR_STATE = 0;
   float PARAM_JITTER_PROB = 0.1;
 
   float LFO_1_FREQ = 0.1;
+  float LFO_2_FREQ = 0.07;
   float LFO_1_WIDTH = 1;
 
   Mesh::Primitive rand_primitive;
 
   void onCreate() override {
-    //Set fps
+    // Set fps
     fps(FPS);
     gam::sampleRate(FPS);
 
@@ -60,7 +62,8 @@ struct MyApp : public App {
     }
     texBlur.filter(Texture::NEAREST_MIPMAP_NEAREST);
 
-    lfo_1.set(LFO_1_FREQ,0,0.5);
+    lfo_1.set(LFO_1_FREQ, 0, 0.5);
+    lfo_2.set(LFO_2_FREQ, 0.1, 0.5);
   }
 
   void onAnimate(double dt_sec) override {
@@ -73,8 +76,12 @@ struct MyApp : public App {
 
   void onDraw(Graphics &g) override {
     float lfo_1_val = 0.5 * (lfo_1.cos() + 1);
+    float lfo_2_val = 0.5 * (lfo_2.cos() + 1);
 
-    g.clear(0);
+    lfo_1_val *= lfo_2_val;
+
+    // if(rng.prob(0.0))
+    // g.clear(0);
 
     // Choose primitve.
     if (rng.prob(0.5)) {
@@ -84,14 +91,14 @@ struct MyApp : public App {
     }
 
     PrevVertices.clear();
-    PrevColors.clear();
+    // PrevColors.clear();
     for (int i = 0; i < shape.vertices().size(); i++) {
       PrevVertices.push_back(shape.vertices()[i]);
-      PrevColors.push_back(shape.colors()[i]);
+      // PrevColors.push_back(shape.colors()[i]);
     }
     shape.vertices().clear();
-    shape.colors().clear();
-    const int N = static_cast<int>(rng.uniform(3, 11));
+    // shape.colors().clear();
+    const int N = static_cast<int>(rng.uniform(3, 14));
     for (int i = 0; i < N; ++i) {
       float theta = float(i) / N * 2 * M_PI;
       Vec3f vert(powf(cos(theta), 3), powf(sin(theta), 7), (sin(theta)));
@@ -118,13 +125,13 @@ struct MyApp : public App {
     }
 
     // 1. Match texture dimensions to window
-    texBlur.resize((fbWidth()*2) * (0 + lfo_1_val), (fbHeight()*2) * (0 + lfo_1_val));
+    texBlur.resize((fbWidth() * 2) * (0 + lfo_1_val), (fbHeight() * 2) * (0 + lfo_1_val));
 
     // 2. Draw feedback texture. Try the different varieties!
-    if(rand_primitive > 3)
-      g.tint(0.98);
-    else 
-      g.tint(0.999);
+    if (rand_primitive > 3)
+      g.tint(1.98);
+    else
+      g.tint(1.999);
 
     int pick_view = rng.uniform(-1, 2);
     if (rng.prob(PARAM_JITTER_PROB)) {
@@ -143,7 +150,6 @@ struct MyApp : public App {
       break;
     default:
       g.quadViewport(texBlur, -1, -1, 2, 2);
-
     }
 
     // g.quadViewport(texBlur, -1.005, -1.005, 2.01, 2.01);  // Outward
@@ -151,11 +157,11 @@ struct MyApp : public App {
     // g.quadViewport(texBlur, -1.005, -1.00, 2.01, 2.0);   // Oblate
     // g.quadViewport(texBlur, -1.005, -0.995, 2.01, 1.99); // Squeeze
     // g.quadViewport(texBlur, -1, -1, 2, 2);               // non-transformed
-    //g.tint(1); // set tint back to 1
+    g.tint(1); // set tint back to 1
 
     // 3. Do your drawing...
     g.camera(Viewpoint::UNIT_ORTHO); // ortho camera that fits [-1:1] x [-1:1]
-    g.rotate(angle, 0, 0, 1);
+    g.rotate(lfo_1_val * angle, lfo_1_val, lfo_1_val, 10 * (lfo_1_val));
     g.meshColor(); // use mesh's color array
     g.draw(shape);
 
