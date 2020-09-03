@@ -16,6 +16,7 @@ Keehong Youn, 2017
 #include "al/app/al_App.hpp"
 #include "al/math/al_Random.hpp"
 #include <iostream>
+#include "Gamma/Oscillator.h"
 
 using namespace al;
 
@@ -28,14 +29,28 @@ struct MyApp : public App {
   std::vector<Vec3f> PrevVertices;
   std::vector<Color> PrevColors;
 
-  static const int PRIMITIVE_SIZE = 5;
-  int PRIMITIVE[PRIMITIVE_SIZE] = {5,4,13,4,5};
+  std::vector<Mesh> shapes;
+
+  gam::LFO<> lfo_1{};
+
+  float FPS = 60;
+
+  static const int PRIMITIVE_SIZE = 10;
+  int PRIMITIVE[PRIMITIVE_SIZE] = {5,4,13,4,5,1,2,3,1,2};
 
   int BLUR_STATE = 0;
-  float PARAM_JITTER_PROB = 0.01;
+  float PARAM_JITTER_PROB = 0.1;
+
+  float LFO_1_FREQ = 0.1;
+  float LFO_1_WIDTH = 1;
+
+  Mesh::Primitive rand_primitive;
 
   void onCreate() override {
-    // Create a colored square
+    //Set fps
+    fps(FPS);
+    gam::sampleRate(FPS);
+
     shape.primitive(Mesh::LINE_STRIP);
     const int N = 5;
     for (int i = 0; i < N; ++i) {
@@ -44,7 +59,8 @@ struct MyApp : public App {
       shape.color(HSV(theta / 2 / M_PI, 0.1));
     }
     texBlur.filter(Texture::NEAREST_MIPMAP_NEAREST);
-    // texBlur.wrap(Texture::MIRRORED_REPEAT,Texture::CLAMP_TO_BORDER,Texture::CLAMP_TO_EDGE);
+
+    lfo_1.set(LFO_1_FREQ,0,0.5);
   }
 
   void onAnimate(double dt_sec) override {
@@ -56,12 +72,14 @@ struct MyApp : public App {
   }
 
   void onDraw(Graphics &g) override {
+    float lfo_1_val = 0.5 * (lfo_1.cos() + 1);
+
     g.clear(0);
 
     // Choose primitve.
     if (rng.prob(0.5)) {
       rng.shuffle(PRIMITIVE, PRIMITIVE_SIZE);
-      Mesh::Primitive rand_primitive = static_cast<Mesh::Primitive>(PRIMITIVE[0]);
+      rand_primitive = static_cast<Mesh::Primitive>(PRIMITIVE[0]);
       shape.primitive(rand_primitive);
     }
 
@@ -100,10 +118,13 @@ struct MyApp : public App {
     }
 
     // 1. Match texture dimensions to window
-    texBlur.resize(fbWidth(), fbHeight());
+    texBlur.resize((fbWidth()*2) * lfo_1_val, (fbHeight()*2) * lfo_1_val);
 
     // 2. Draw feedback texture. Try the different varieties!
-    g.tint(0.98);
+    if(rand_primitive > 3)
+      g.tint(0.98);
+    else 
+      g.tint(0.999);
 
     int pick_view = rng.uniform(-1, 2);
     if (rng.prob(PARAM_JITTER_PROB)) {
@@ -130,7 +151,7 @@ struct MyApp : public App {
     // g.quadViewport(texBlur, -1.005, -1.00, 2.01, 2.0);   // Oblate
     // g.quadViewport(texBlur, -1.005, -0.995, 2.01, 1.99); // Squeeze
     // g.quadViewport(texBlur, -1, -1, 2, 2);               // non-transformed
-    g.tint(1); // set tint back to 1
+    //g.tint(1); // set tint back to 1
 
     // 3. Do your drawing...
     g.camera(Viewpoint::UNIT_ORTHO); // ortho camera that fits [-1:1] x [-1:1]
