@@ -118,7 +118,7 @@ struct MyApp : public App {
     }
 
     // 1. Match texture dimensions to window
-    texBlur.resize((fbWidth()*2) * lfo_1_val, (fbHeight()*2) * lfo_1_val);
+    texBlur.resize((fbWidth()*2) * (0 + lfo_1_val), (fbHeight()*2) * (0 + lfo_1_val));
 
     // 2. Draw feedback texture. Try the different varieties!
     if(rand_primitive > 3)
