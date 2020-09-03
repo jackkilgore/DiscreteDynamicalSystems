@@ -1,3 +1,6 @@
+# ide specific stuff
+.vscode/
+
 # don't ignore `bin` anywhere in folder tree
 !**/bin
 # but ignore things inside folder named bin
