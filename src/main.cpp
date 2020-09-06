@@ -33,22 +33,26 @@ struct MyApp : public App {
 
   gam::LFO<> lfo_1{};
   gam::LFO<> lfo_2{};
+  gam::LFO<> lfo_3{};
 
   float FPS = 60;
 
-  static const int PRIMITIVE_SIZE = 10;
-  int PRIMITIVE[PRIMITIVE_SIZE] = {5, 4, 13, 4, 5, 1, 2, 3, 1, 2};
+  static const int PRIMITIVE_SIZE = 5;
+  int PRIMITIVE[PRIMITIVE_SIZE] = {5, 4, 13, 4, 5};
 
   int BLUR_STATE = 0;
-  float PARAM_JITTER_PROB = 0.1;
+  float PARAM_JITTER_PROB = 0.5;
 
   float LFO_1_FREQ = 0.1;
   float LFO_2_FREQ = 0.07;
+  float LFO_3_FREQ = 0.01;
   float LFO_1_WIDTH = 1;
 
   Mesh::Primitive rand_primitive;
 
   void onCreate() override {
+    dimensions(500,500);
+
     // Set fps
     fps(FPS);
     gam::sampleRate(FPS);
@@ -64,6 +68,7 @@ struct MyApp : public App {
 
     lfo_1.set(LFO_1_FREQ, 0, 0.5);
     lfo_2.set(LFO_2_FREQ, 0.1, 0.5);
+    lfo_3.set(LFO_3_FREQ, 0.1, 0.5);
   }
 
   void onAnimate(double dt_sec) override {
@@ -76,12 +81,13 @@ struct MyApp : public App {
 
   void onDraw(Graphics &g) override {
     float lfo_1_val = 0.5 * (lfo_1.cos() + 1);
-    float lfo_2_val = 0.5 * (lfo_2.cos() + 1);
+    float lfo_2_val = 0.5 * (lfo_2.para() + 1);
+    float lfo_3_val = 0.5 * (lfo_3.para() + 1);
 
     lfo_1_val *= lfo_2_val;
 
-    // if(rng.prob(0.0))
-    // g.clear(0);
+    // if(rng.prob(0.5))
+    g.clear(1);
 
     // Choose primitve.
     if (rng.prob(0.5)) {
@@ -102,7 +108,7 @@ struct MyApp : public App {
     for (int i = 0; i < N; ++i) {
       float theta = float(i) / N * 2 * M_PI;
       Vec3f vert(powf(cos(theta), 3), powf(sin(theta), 7), (sin(theta)));
-      Color col(HSV(theta / 2 / M_PI, 0.1));
+      Color col(HSV(theta, 0.1,0.1));
       if (i >= PrevVertices.size()) {
         int rand_index = rng.uniform(0.0f, static_cast<float>(PrevVertices.size() - 1));
 
@@ -125,13 +131,14 @@ struct MyApp : public App {
     }
 
     // 1. Match texture dimensions to window
-    texBlur.resize((fbWidth() * 2) * (0 + lfo_1_val), (fbHeight() * 2) * (0 + lfo_1_val));
+    texBlur.resize((fbWidth() * 2) * (lfo_3_val + lfo_1_val),
+                   (fbHeight() * 2) * (lfo_2_val + lfo_1_val));
 
     // 2. Draw feedback texture. Try the different varieties!
     if (rand_primitive > 3)
-      g.tint(1.98);
+      g.tint(0.98);
     else
-      g.tint(1.999);
+      g.tint(0.999);
 
     int pick_view = rng.uniform(-1, 2);
     if (rng.prob(PARAM_JITTER_PROB)) {
