@@ -1,3 +1,6 @@
 [submodule "allolib"]
 	path = allolib
 	url = https://github.com/AlloSphere-Research-Group/allolib.git
+[submodule "DiscreteDynamicalSystemsRT/allolib"]
+	path = DiscreteDynamicalSystemsRT/allolib
+	url = git@github.com:AlloSphere-Research-Group/allolib
